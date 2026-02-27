@@ -8,7 +8,7 @@ import { useVapi } from '@/hooks/useVapi';
 
 export default function GramSathi() {
     const { t } = useTranslation();
-    const { connected, isConnecting, assistantIsSpeaking, transcript, start, stop } = useVapi();
+    const { connected, isConnecting, assistantIsSpeaking, transcript, messages: vapiMessages, start, stop } = useVapi();
     const [messages, setMessages] = useState([
         { id: 1, role: 'bot', text: "Namaste! I am GramSathi, your AI career guide. Based on your profile, I see a 20% skill gap in 'Digital Marketing'. Would you like to connect with a mentor or see a learning roadmap?", type: 'text' },
         { id: 2, role: 'bot', type: 'suggestion', options: ["Show Roadmap", "Recommend Mentor", "What's SkillSwap?"] }
@@ -30,6 +30,24 @@ export default function GramSathi() {
             setInput(transcript);
         }
     }, [transcript]);
+
+    // Add Vapi messages to chat history
+    useEffect(() => {
+        if (vapiMessages.length > 0) {
+            const lastMsg = vapiMessages[vapiMessages.length - 1];
+            setMessages(prev => [
+                ...prev,
+                {
+                    id: Date.now(),
+                    role: lastMsg.role === 'assistant' ? 'bot' : 'user',
+                    text: lastMsg.text,
+                    type: 'text'
+                }
+            ]);
+            // Clear input when user speaks
+            if (lastMsg.role === 'user') setInput('');
+        }
+    }, [vapiMessages]);
 
     const handleSend = () => {
         if (!input.trim()) return;
@@ -60,7 +78,7 @@ export default function GramSathi() {
                 messages: [
                     {
                         role: "system",
-                        content: "You are GramSathi, a career assistant. Help the user with career advice and platform navigation."
+                        content: "You are GramSathi, a professional career assistant for rural youth. Speak clearly, be encouraging, and use a mix of English and Hindi (Hinglish) where appropriate to be more relatable."
                     }
                 ]
             }
@@ -128,6 +146,11 @@ export default function GramSathi() {
                             )}
                         </div>
                     ))}
+                    {assistantIsSpeaking && (
+                        <div style={{ alignSelf: 'flex-start', color: 'var(--text-muted)', fontSize: '12px', marginLeft: '12px' }}>
+                            Assistant is speaking...
+                        </div>
+                    )}
                     <div ref={chatEndRef} />
                 </div>
 

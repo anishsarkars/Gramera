@@ -11,6 +11,7 @@ export const useVapi = () => {
     const [assistantIsSpeaking, setAssistantIsSpeaking] = useState(false);
     const [volumeLevel, setVolumeLevel] = useState(0);
     const [transcript, setTranscript] = useState('');
+    const [messages, setMessages] = useState<any[]>([]);
 
     useEffect(() => {
         vapi.on('call-start', () => {
@@ -22,6 +23,7 @@ export const useVapi = () => {
             setConnected(false);
             setIsConnecting(false);
             setTranscript('');
+            setMessages([]);
         });
 
         vapi.on('speech-start', () => {
@@ -39,6 +41,13 @@ export const useVapi = () => {
         vapi.on('message', (message) => {
             if (message.type === 'transcript' && message.transcriptType === 'partial') {
                 setTranscript(message.transcript);
+            }
+            if (message.type === 'transcript' && message.transcriptType === 'final') {
+                setTranscript('');
+            }
+            if (message.type === 'model-output' || (message.type === 'transcript' && message.role === 'assistant' && message.transcriptType === 'final')) {
+                // Add assistant response to messages
+                setMessages(prev => [...prev, { role: 'assistant', text: message.transcript || message.output }]);
             }
         });
 
@@ -81,6 +90,7 @@ export const useVapi = () => {
         assistantIsSpeaking,
         volumeLevel,
         transcript,
+        messages,
         start,
         stop,
         toggle
